@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [VaultEntry::class, PasswordRecord::class],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class AppDb : RoomDatabase() {

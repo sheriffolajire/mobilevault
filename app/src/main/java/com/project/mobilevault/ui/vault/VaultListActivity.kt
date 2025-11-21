@@ -1,4 +1,3 @@
-
 package com.project.mobilevault.ui.vault
 
 import android.content.Intent
@@ -24,14 +23,16 @@ class VaultListActivity : ComponentActivity() {
     private val vm: VaultListViewModel by viewModels()
 
     private lateinit var lockController: LockController
-    private val sessionTimeout = SessionTimeout(timeoutMs = 2 * 60_000L) // 2 minutes
+    private var sessionTimeout = SessionTimeout(timeoutMs = 2 * 60_000L) // default 2 minutes; will override from settings
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
 
-        lockController = LockController(this, onLock = { lockAndReturnToLogin() })
+        val settings = com.project.mobilevault.settings.SettingsPrefs(this)
+        lockController = LockController(this, onLock = { lockAndReturnToLogin() }, stillnessMs = settings.stillnessMs)
+        sessionTimeout = com.project.mobilevault.repo.SessionTimeout(timeoutMs = settings.idleTimeoutMs)
 
         setContent {
             MobileVaultTheme {
@@ -50,9 +51,10 @@ class VaultListActivity : ComponentActivity() {
                 Scaffold { _ ->
                     VaultListScreen(
                         entries = state.items,
-                        onAdd = { startActivity(Intent(this, EntryEditorActivity::class.java)) },
-                        onOpen = { id -> startActivity(Intent(this, EntryEditorActivity::class.java).putExtra("entryId", id)) },
-                        onLogout = { lockAndReturnToLogin() }
+                        onAdd = { startActivity(Intent(this@VaultListActivity, EntryEditorActivity::class.java)) },
+                        onOpen = { id -> startActivity(Intent(this@VaultListActivity, EntryEditorActivity::class.java).putExtra("entryId", id)) },
+                        onLogout = { lockAndReturnToLogin() },
+                        onOpenSettings = { startActivity(Intent(this@VaultListActivity, com.project.mobilevault.settings.SettingsActivity::class.java)) }
                     )
                 }
             }

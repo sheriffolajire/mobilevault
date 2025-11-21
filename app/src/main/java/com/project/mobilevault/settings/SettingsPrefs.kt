@@ -1,0 +1,30 @@
+package com.project.mobilevault.settings
+
+import android.content.Context
+
+class SettingsPrefs(context: Context) {
+    private val sp = context.getSharedPreferences("settings_prefs", Context.MODE_PRIVATE)
+
+    var biometricsEnabled: Boolean
+        get() = sp.getBoolean(KEY_BIOMETRICS_ENABLED, true)
+        set(v) { sp.edit().putBoolean(KEY_BIOMETRICS_ENABLED, v).apply() }
+
+    var idleTimeoutMs: Long
+        get() = sp.getLong(KEY_IDLE_TIMEOUT_MS, 2 * 60_000L)
+        set(v) { sp.edit().putLong(KEY_IDLE_TIMEOUT_MS, v).apply() }
+
+    var stillnessMs: Long
+        get() = sp.getLong(KEY_STILLNESS_MS, 30_000L)
+        set(v) { sp.edit().putLong(KEY_STILLNESS_MS, v).apply() }
+
+    var bgGraceMs: Long
+        get() = sp.getLong(KEY_BG_GRACE_MS, 15_000L)
+        set(v) { sp.edit().putLong(KEY_BG_GRACE_MS, v).apply() }
+
+    companion object {
+        private const val KEY_BIOMETRICS_ENABLED = "biometrics_enabled"
+        private const val KEY_IDLE_TIMEOUT_MS = "idle_timeout_ms"
+        private const val KEY_STILLNESS_MS = "stillness_ms"
+        private const val KEY_BG_GRACE_MS = "bg_grace_ms"
+    }
+}

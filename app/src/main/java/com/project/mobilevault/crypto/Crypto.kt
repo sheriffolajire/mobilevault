@@ -23,8 +23,13 @@ object Crypto {
         return SecretKeyFactory.getInstance(PBKDF2).generateSecret(spec).encoded
     }
 
-    fun hmaclessVerifier(derivedKey: ByteArray): ByteArray =
-        MessageDigest.getInstance("SHA-256").digest(derivedKey)
+    fun hmaclessVerifier(derivedKey: ByteArray): ByteArray = sha256(derivedKey)
+
+    fun sha256(vararg parts: ByteArray): ByteArray {
+        val md = MessageDigest.getInstance("SHA-256")
+        parts.forEach { md.update(it) }
+        return md.digest()
+    }
 
     fun encryptAesGcm(key: ByteArray, plaintext: ByteArray, aad: ByteArray? = null): CipherText {
         val iv = randomBytes(12)

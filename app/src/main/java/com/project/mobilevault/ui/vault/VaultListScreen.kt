@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -19,13 +20,17 @@ fun VaultListScreen(
     entries: List<VaultEntry>,
     onAdd: () -> Unit,
     onOpen: (Long) -> Unit,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     Scaffold(
         topBar = {
             LargeTopAppBar(
                 title = { Text("Your Vault") },
-                actions = { TextButton(onClick = onLogout) { Text("Lock") } }
+                actions = {
+                    TextButton(onClick = onLogout) { Text("Lock") }
+                    IconButton(onClick = onOpenSettings) { Icon(Icons.Default.Settings, contentDescription = "Settings") }
+                }
             )
         },
         floatingActionButton = {

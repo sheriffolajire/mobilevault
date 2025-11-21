@@ -18,7 +18,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun LoginScreen(
     state: LoginViewModel.UiState,
-    onSubmit: (String, String?) -> Unit
+    onSubmit: (String, String?) -> Unit,
+    showBiometric: Boolean = false,
+    onBiometricClick: () -> Unit = {}
 ) {
     val focus = LocalFocusManager.current
 
@@ -101,6 +103,12 @@ fun LoginScreen(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text(if (isCreate) "Create & Unlock" else "Unlock")
+                    }
+
+                    if (showBiometric && !isCreate) {
+                        OutlinedButton(onClick = onBiometricClick, modifier = Modifier.fillMaxWidth()) {
+                            Text("Unlock with biometrics")
+                        }
                     }
 
                     // Tiny helper text

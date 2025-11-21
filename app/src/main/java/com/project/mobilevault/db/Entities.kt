@@ -12,6 +12,8 @@ data class VaultEntry(
     // AES-GCM fields
     val iv: ByteArray,
     val ciphertext: ByteArray,
+    // Integrity metadata: SHA-256 over (aad || iv || ciphertext)
+    val integrity: ByteArray,
 )
 
 @Entity(tableName = "auth")
