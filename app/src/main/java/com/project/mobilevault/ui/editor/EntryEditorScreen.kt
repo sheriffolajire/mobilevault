@@ -19,6 +19,12 @@ fun EntryEditorScreen(
     var title by remember(state.value.title) { mutableStateOf(state.value.title) }
     var content by remember(state.value.content) { mutableStateOf(state.value.content) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val error = state.value.error
+    LaunchedEffect(error) {
+        if (error != null) snackbarHostState.showSnackbar(error)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -27,12 +33,13 @@ fun EntryEditorScreen(
                 actions = { IconButton(onClick = { onSave(title, content) }) { Icon(Icons.Default.Check, contentDescription = "Save") } }
             )
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         contentWindowInsets = WindowInsets.safeDrawing
-    ) { pad ->
+    ) { innerPadding ->
         Column(
             Modifier
                 .fillMaxSize()
-                .padding(pad)
+                .padding(innerPadding)
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {

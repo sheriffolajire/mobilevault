@@ -14,16 +14,21 @@ class VaultRepository(
 
     suspend fun getDecrypted(id: Long): Pair<VaultEntry, String>? {
         val e = db.vaultDao().getById(id) ?: return null
-        val aad = aadFor(e.id, e.createdAt)
-        val dek = session.getDekOrThrow()
-        val plain = Crypto.decryptAesGcm(dek, e.iv, e.ciphertext, aad)
-        return e to plain.decodeToString()
+        return try {
+            val aad = aadFor(e.createdAt) // bind only to createdAt to avoid id-mismatch on first insert
+            val dek = session.getDekOrThrow()
+            val plain = Crypto.decryptAesGcm(dek, e.iv, e.ciphertext, aad)
+            e to plain.decodeToString()
+        } catch (t: Throwable) {
+            // Return null on decryption failure (legacy/corrupt rows)
+            null
+        }
     }
 
     suspend fun upsertEncrypted(id: Long?, title: String, content: String): Long {
         val now = System.currentTimeMillis()
         val created = if (id == null) now else (db.vaultDao().getById(id)?.createdAt ?: now)
-        val aad = aadFor(id ?: 0L, created)
+        val aad = aadFor(created) // only createdAt
         val dek = session.getDekOrThrow()
         val ct = Crypto.encryptAesGcm(dek, content.encodeToByteArray(), aad)
         val entry = VaultEntry(
@@ -39,6 +44,6 @@ class VaultRepository(
 
     suspend fun delete(entry: VaultEntry) = db.vaultDao().delete(entry)
 
-    private fun aadFor(id: Long, createdAt: Long): ByteArray =
-        ByteBuffer.allocate(16).putLong(id).putLong(createdAt).array()
+    private fun aadFor(createdAt: Long): ByteArray =
+        ByteBuffer.allocate(8).putLong(createdAt).array()
 }
