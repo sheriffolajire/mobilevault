@@ -21,10 +21,20 @@ class SettingsPrefs(context: Context) {
         get() = sp.getLong(KEY_BG_GRACE_MS, 15_000L)
         set(v) { sp.edit().putLong(KEY_BG_GRACE_MS, v).apply() }
 
+    var autoWipeEnabled: Boolean
+        get() = sp.getBoolean(KEY_AUTO_WIPE, false)
+        set(v) { sp.edit().putBoolean(KEY_AUTO_WIPE, v).apply() }
+
+    var wipeThreshold: Int
+        get() = sp.getInt(KEY_WIPE_THRESHOLD, 10)
+        set(v) { sp.edit().putInt(KEY_WIPE_THRESHOLD, v).apply() }
+
     companion object {
         private const val KEY_BIOMETRICS_ENABLED = "biometrics_enabled"
         private const val KEY_IDLE_TIMEOUT_MS = "idle_timeout_ms"
         private const val KEY_STILLNESS_MS = "stillness_ms"
         private const val KEY_BG_GRACE_MS = "bg_grace_ms"
+        private const val KEY_AUTO_WIPE = "auto_wipe"
+        private const val KEY_WIPE_THRESHOLD = "wipe_threshold"
     }
 }

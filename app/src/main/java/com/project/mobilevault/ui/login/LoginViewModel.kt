@@ -33,6 +33,8 @@ class LoginViewModel : ViewModel() {
             _state.value = _state.value.copy(isLoading = true, error = null)
             val auth = ServiceLocator.authRepo(context)
             val session: SessionKeyHolder = ServiceLocator.session()
+            val attempts = com.project.mobilevault.security.AttemptsPrefs(context)
+            val settings = com.project.mobilevault.settings.SettingsPrefs(context)
             try {
                 val init = auth.isInitialized()
                 if (!init) {
@@ -46,9 +48,24 @@ class LoginViewModel : ViewModel() {
                 }
                 val dek = auth.tryLogin(password.toCharArray())
                 if (dek == null) {
-                    _state.value = _state.value.copy(isInitialized = true, isLoading = false, error = "Invalid password")
+                    // Handle failed attempt and optional auto-wipe
+                    attempts.count = attempts.count + 1
+                    if (settings.autoWipeEnabled && attempts.count >= settings.wipeThreshold) {
+                        // wipe vault: delete DB, attachments, and biometric blob
+                        runCatching {
+                            context.getDatabasePath("mobile_vault.db").delete()
+                            java.io.File(context.filesDir, "attachments").deleteRecursively()
+                            com.project.mobilevault.repo.AuthPrefs(context).clearBiometricWrappedDek()
+                        }
+                        attempts.reset()
+                        _state.value = _state.value.copy(isInitialized = false, isLoading = false, error = "Vault wiped after too many failed attempts.")
+                    } else {
+                        _state.value = _state.value.copy(isInitialized = true, isLoading = false, error = "Invalid password")
+                    }
                     return@launch
                 }
+                // success
+                attempts.reset()
                 session.setDek(dek)
                 dek.fill(0)
                 onSuccess()

@@ -73,16 +73,25 @@ class EntryEditorActivity : ComponentActivity() {
     }
 
     private fun openAttachment(att: Attachment) {
-        lifecycleScope.launch {
-            try {
-                val repo = ServiceLocator.attachmentRepo(this@EntryEditorActivity)
-                val uri = repo.decryptToCache(att.id) ?: return@launch
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, att.mimeType)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                startActivity(intent)
-            } catch (_: Throwable) { /* ignore for now; UI already surfaces errors */ }
+        // Prefer decrypting ContentProvider to avoid plaintext cache
+        val uri = Uri.parse("content://${packageName}.viewer/attachment/${att.id}")
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, att.mimeType)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        runCatching { startActivity(intent) }.onFailure {
+            // Fallback: try cache-based decrypt if no app accepts our content provider
+            lifecycleScope.launch {
+                try {
+                    val repo = ServiceLocator.attachmentRepo(this@EntryEditorActivity)
+                    val cacheUri = repo.decryptToCache(att.id) ?: return@launch
+                    val fallback = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(cacheUri, att.mimeType)
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    startActivity(fallback)
+                } catch (_: Throwable) { }
+            }
         }
     }
 
