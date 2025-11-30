@@ -6,13 +6,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(
-    entities = [VaultEntry::class, PasswordRecord::class],
-    version = 2,
+    entities = [VaultEntry::class, PasswordRecord::class, Attachment::class],
+    version = 3,
     exportSchema = true
 )
 abstract class AppDb : RoomDatabase() {
     abstract fun vaultDao(): VaultDao
     abstract fun authDao(): AuthDao
+    abstract fun attachmentDao(): AttachmentDao
 
     companion object {
         @Volatile private var INSTANCE: AppDb? = null

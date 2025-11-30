@@ -13,4 +13,5 @@ object ServiceLocator {
 
     fun authRepo(context: Context) = AuthRepository(AppDb.get(context).authDao())
     fun vaultRepo(context: Context) = VaultRepository(AppDb.get(context), session())
+    fun attachmentRepo(context: Context) = AttachmentRepository(AppDb.get(context), session(), context)
 }

@@ -16,6 +16,20 @@ data class VaultEntry(
     val integrity: ByteArray,
 )
 
+@Entity(tableName = "attachments")
+data class Attachment(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0L,
+    val entryId: Long?,
+    val displayName: String,
+    val mimeType: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val sizeBytes: Long,
+    val path: String,
+    // File integrity over (header || per-chunk iv||ct bytes aggregated)
+    val integrity: ByteArray,
+)
+
 @Entity(tableName = "auth")
 data class PasswordRecord(
     @PrimaryKey val key: String = "master",
