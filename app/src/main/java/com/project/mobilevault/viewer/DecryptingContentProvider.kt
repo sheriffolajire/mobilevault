@@ -20,7 +20,17 @@ import java.nio.ByteBuffer
 class DecryptingContentProvider : ContentProvider() {
     override fun onCreate(): Boolean = true
     override fun query(uri: Uri, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? = null
-    override fun getType(uri: Uri): String? = null
+    override fun getType(uri: Uri): String? {
+        val segments = uri.pathSegments
+        if (segments.size == 2 && segments[0] == "attachment") {
+            val id = segments[1].toLongOrNull() ?: return null
+            val ctx = context ?: return null
+            val repo = ServiceLocator.attachmentRepo(ctx)
+            val att = runBlocking { repo.getById(id) }
+            return att?.mimeType
+        }
+        return null
+    }
     override fun insert(uri: Uri, values: ContentValues?): Uri? = null
     override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int = 0
     override fun update(uri: Uri, values: ContentValues?, selection: String?, selectionArgs: Array<out String>?): Int = 0

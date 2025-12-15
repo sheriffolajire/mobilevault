@@ -118,5 +118,7 @@ class LoginActivity : AppCompatActivity() {
         startActivity(Intent(this, VaultListActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         })
+        // An entrance transition for better motion
+        overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.fade_out)
     }
 }

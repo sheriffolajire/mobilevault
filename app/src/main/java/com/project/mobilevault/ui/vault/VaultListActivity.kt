@@ -51,10 +51,19 @@ class VaultListActivity : ComponentActivity() {
                 Scaffold { _ ->
                     VaultListScreen(
                         entries = state.items,
-                        onAdd = { startActivity(Intent(this@VaultListActivity, EntryEditorActivity::class.java)) },
-                        onOpen = { id -> startActivity(Intent(this@VaultListActivity, EntryEditorActivity::class.java).putExtra("entryId", id)) },
+                        onAdd = {
+                            startActivity(Intent(this@VaultListActivity, EntryEditorActivity::class.java))
+                            overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.fade_out)
+                        },
+                        onOpen = { id ->
+                            startActivity(Intent(this@VaultListActivity, EntryEditorActivity::class.java).putExtra("entryId", id))
+                            overridePendingTransition(android.R.anim.slide_in_left, android.R.anim.fade_out)
+                        },
                         onLogout = { lockAndReturnToLogin() },
-                        onOpenSettings = { startActivity(Intent(this@VaultListActivity, com.project.mobilevault.settings.SettingsActivity::class.java)) }
+                        onOpenSettings = {
+                            startActivity(Intent(this@VaultListActivity, com.project.mobilevault.settings.SettingsActivity::class.java))
+                            overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
+                        }
                     )
                 }
             }
@@ -63,6 +72,13 @@ class VaultListActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        // If session was cleared while in background, return to Login
+        val unlocked = runCatching { com.project.mobilevault.di.ServiceLocator.session().getDekOrThrow(); true }.getOrDefault(false)
+        if (!unlocked) {
+            lockAndReturnToLogin()
+            return
+        }
+
         sessionTimeout.poke() // reset idle timer when returning
         lockController.start()
     }

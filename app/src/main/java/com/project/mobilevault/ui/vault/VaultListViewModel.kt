@@ -9,10 +9,14 @@ import com.project.mobilevault.di.ServiceLocator
 import com.project.mobilevault.ui.login.LoginActivity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 
 class VaultListViewModel : ViewModel() {
-    data class UiState(val items: List<VaultEntry> = emptyList())
+    data class UiState(
+        val items: List<VaultEntry> = emptyList(),
+        val isLoading: Boolean = true
+    )
 
     private val _state = MutableStateFlow(UiState())
     val state: StateFlow<UiState> = _state
@@ -20,7 +24,9 @@ class VaultListViewModel : ViewModel() {
     fun load(context: Context) {
         val repo = ServiceLocator.vaultRepo(context)
         viewModelScope.launch {
-            repo.entries().collect { list -> _state.value = UiState(list) }
+            repo.entries()
+                .onStart { _state.value = _state.value.copy(isLoading = true) }
+                .collect { list -> _state.value = UiState(items = list, isLoading = false) }
         }
     }
 

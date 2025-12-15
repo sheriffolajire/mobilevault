@@ -18,16 +18,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import com.project.mobilevault.repo.AuthPrefs
 import com.project.mobilevault.ui.theme.MobileVaultTheme
 import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
+import kotlin.math.roundToInt
 
 class SettingsActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContent { MobileVaultTheme { SettingsScreen(onBack = { finish() }) } }
+        setContent { MobileVaultTheme { SettingsScreen(onBack = {
+            finish()
+            overridePendingTransition(android.R.anim.fade_in, android.R.anim.slide_out_right)
+        }) } }
     }
 }
 
@@ -42,6 +48,7 @@ fun SettingsScreen(onBack: () -> Unit) {
     var idle by remember { mutableStateOf(settings.idleTimeoutMs) }
     var still by remember { mutableStateOf(settings.stillnessMs) }
     var grace by remember { mutableStateOf(settings.bgGraceMs) }
+    var autoDeleteOnImport by remember { mutableStateOf(settings.autoDeleteOnImport) }
 
     val timeoutOptions = listOf(15_000L, 30_000L, 60_000L, 120_000L, 300_000L)
 
@@ -53,7 +60,7 @@ fun SettingsScreen(onBack: () -> Unit) {
             )
         }
     ) { pad ->
-        Column(Modifier.padding(pad).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.padding(pad).padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(16.dp)) {
             RowWithSwitch(
                 title = "Biometric quick unlock",
                 checked = biometrics,
@@ -81,23 +88,36 @@ fun SettingsScreen(onBack: () -> Unit) {
                 )
             }
 
-            DropdownSetting(
+            SliderSetting(
                 label = "Idle timeout",
                 valueMs = idle,
-                options = timeoutOptions,
-                onSelect = { ms -> idle = ms; settings.idleTimeoutMs = ms }
+                minMs = 15_000L,
+                maxMs = 600_000L,
+                stepMs = 5_000L,
+                onChange = { ms -> idle = ms; settings.idleTimeoutMs = ms }
             )
-            DropdownSetting(
+            SliderSetting(
                 label = "Stillness timeout",
                 valueMs = still,
-                options = timeoutOptions,
-                onSelect = { ms -> still = ms; settings.stillnessMs = ms }
+                minMs = 5_000L,
+                maxMs = 180_000L,
+                stepMs = 5_000L,
+                onChange = { ms -> still = ms; settings.stillnessMs = ms }
             )
-            DropdownSetting(
+            SliderSetting(
                 label = "Background grace",
                 valueMs = grace,
-                options = listOf(0L, 5_000L, 10_000L, 15_000L, 30_000L, 60_000L),
-                onSelect = { ms -> grace = ms; settings.bgGraceMs = ms }
+                minMs = 0L,
+                maxMs = 60_000L,
+                stepMs = 5_000L,
+                onChange = { ms -> grace = ms; settings.bgGraceMs = ms }
+            )
+
+            // Auto-delete originals option
+            RowWithSwitch(
+                title = "Auto-delete originals on import",
+                checked = autoDeleteOnImport,
+                onCheckedChange = { v -> autoDeleteOnImport = v; settings.autoDeleteOnImport = v }
             )
 
             Divider()
@@ -277,4 +297,46 @@ private fun ChangePasswordSection() {
             dismissButton = { TextButton(onClick = { show = false }) { Text("Cancel") } }
         )
     }
+}
+
+
+@Composable
+private fun SliderSetting(
+    label: String,
+    valueMs: Long,
+    minMs: Long,
+    maxMs: Long,
+    stepMs: Long,
+    onChange: (Long) -> Unit
+) {
+    var slider by remember { mutableStateOf(valueMs.toFloat()) }
+    LaunchedEffect(valueMs) { slider = valueMs.toFloat() }
+
+    val minF = minMs.toFloat()
+    val maxF = maxMs.toFloat()
+    val stepF = stepMs.toFloat()
+    val stepsCount = (((maxMs - minMs) / stepMs).toInt() - 1).coerceAtLeast(0)
+
+    ListItem(
+        headlineContent = { Text(label) },
+        supportingContent = {
+            Column(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text("${(minMs/1000)}s", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("${(slider.toLong()/1000)}s", style = MaterialTheme.typography.labelMedium)
+                    Text("${(maxMs/1000)}s", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Slider(
+                    value = slider.coerceIn(minF, maxF),
+                    onValueChange = { slider = it },
+                    valueRange = minF..maxF,
+                    steps = stepsCount,
+                    onValueChangeFinished = {
+                        val snapped = (((slider - minF) / stepF).roundToInt() * stepF + minF).coerceIn(minF, maxF)
+                        onChange(snapped.toLong())
+                    }
+                )
+            }
+        }
+    )
 }

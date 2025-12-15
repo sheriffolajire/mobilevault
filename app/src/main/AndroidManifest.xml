@@ -38,6 +38,10 @@
             android:exported="false" />
 
         <activity
+            android:name=".viewer.AttachmentViewerActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".settings.SettingsActivity"
             android:exported="false" />
 

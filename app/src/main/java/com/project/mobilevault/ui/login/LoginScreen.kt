@@ -13,6 +13,16 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -30,6 +40,11 @@ fun LoginScreen(
 
     val isCreate = !state.isInitialized
     val isError = state.error != null
+
+    // Padlock animation state
+    var locking by remember { mutableStateOf(false) }
+    LaunchedEffect(state.error) { if (state.error != null) locking = false }
+    val lockScale by animateFloatAsState(if (locking) 1.15f else 1f, label = "loginLockScale")
 
     Scaffold(
         topBar = { CenterAlignedTopAppBar(title = { Text(if (isCreate) "Create Master Password" else "Unlock Vault") }) },
@@ -94,19 +109,59 @@ fun LoginScreen(
                         )
                     }
 
+                    val interaction = remember { MutableInteractionSource() }
+                    val pressed by interaction.collectIsPressedAsState()
+                    val scale by animateFloatAsState(if (pressed) 0.98f else 1f, label = "loginPress")
+                    val scope = rememberCoroutineScope()
+                    // Determine icon state for the button
+                    val iconState = when {
+                        state.isLoading -> "loading"
+                        locking -> "locking"
+                        else -> "idle"
+                    }
                     Button(
                         onClick = {
                             focus.clearFocus(force = true)
-                            onSubmit(password, if (isCreate) confirm else null)
+                            locking = true
+                            scope.launch {
+                                kotlinx.coroutines.delay(160)
+                                onSubmit(password, if (isCreate) confirm else null)
+                            }
                         },
                         enabled = password.isNotBlank() && (!isCreate || password == confirm),
-                        modifier = Modifier.fillMaxWidth()
+                        interactionSource = interaction,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .graphicsLayer { scaleX = scale; scaleY = scale }
                     ) {
+                        androidx.compose.animation.AnimatedContent(targetState = iconState, label = "unlock_icon") { st ->
+                            when (st) {
+                                "loading" -> {
+                                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                                    Spacer(Modifier.width(12.dp))
+                                }
+                                "locking" -> {
+                                    val pulse by animateFloatAsState(1.15f, label = "lockPulse")
+                                    Icon(imageVector = Icons.Filled.Lock, contentDescription = "Lock", modifier = Modifier.graphicsLayer { scaleX = pulse; scaleY = pulse })
+                                    Spacer(Modifier.width(12.dp))
+                                }
+                                else -> {
+                                    Icon(imageVector = Icons.Filled.LockOpen, contentDescription = "Unlock")
+                                    Spacer(Modifier.width(12.dp))
+                                }
+                            }
+                        }
                         Text(if (isCreate) "Create & Unlock" else "Unlock")
                     }
 
                     if (showBiometric && !isCreate) {
-                        OutlinedButton(onClick = onBiometricClick, modifier = Modifier.fillMaxWidth()) {
+                        OutlinedButton(onClick = {
+                            locking = true
+                            scope.launch {
+                                kotlinx.coroutines.delay(120)
+                                onBiometricClick()
+                            }
+                        }, modifier = Modifier.fillMaxWidth()) {
                             Text("Unlock with biometrics")
                         }
                     }
@@ -122,7 +177,7 @@ fun LoginScreen(
                 }
             }
 
-            // Optional loading state (wire up to state.isLoading if you expose it)
+            // Loading overlay
             if (state.isLoading) {
                 Surface(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.6f),

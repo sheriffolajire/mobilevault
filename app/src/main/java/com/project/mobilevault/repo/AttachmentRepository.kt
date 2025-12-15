@@ -24,10 +24,13 @@ class AttachmentRepository(
 
     suspend fun getById(id: Long): Attachment? = db.attachmentDao().getById(id)
 
+    suspend fun getLatestPreviewAttachmentForEntry(entryId: Long): Attachment? =
+        db.attachmentDao().getLatestPreviewForEntry(entryId)
+
     suspend fun importForEntry(entryId: Long?, src: Uri): Long {
         val cr = context.contentResolver
         val name = queryDisplayName(cr, src) ?: "document"
-        val mime = cr.getType(src) ?: "application/octet-stream"
+        val mime = cr.getType(src) ?: guessMimeFromName(name) ?: "application/octet-stream"
         val now = System.currentTimeMillis()
 
         val placeholder = Attachment(
@@ -89,5 +92,24 @@ class AttachmentRepository(
             if (c.moveToFirst() && idx >= 0) return c.getString(idx)
         }
         return null
+    }
+    private fun guessMimeFromName(name: String): String? {
+        val lower = name.lowercase()
+        //file formats
+        return when {
+            lower.endsWith(".webp") -> "image/webp"
+            lower.endsWith(".jpg") || lower.endsWith(".jpeg") -> "image/jpeg"
+            lower.endsWith(".png") -> "image/png"
+            lower.endsWith(".gif") -> "image/gif"
+            lower.endsWith(".bmp") -> "image/bmp"
+            lower.endsWith(".heic") || lower.endsWith(".heif") -> "image/heic"
+            lower.endsWith(".mp4") -> "video/mp4"
+            lower.endsWith(".mkv") -> "video/x-matroska"
+            lower.endsWith(".webm") -> "video/webm"
+            lower.endsWith(".mp3") -> "audio/mpeg"
+            lower.endsWith(".m4a") -> "audio/mp4"
+            lower.endsWith(".wav") -> "audio/wav"
+            else -> null
+        }
     }
 }

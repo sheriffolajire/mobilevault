@@ -19,4 +19,15 @@ interface AttachmentDao {
 
     @Delete
     suspend fun delete(a: Attachment)
+
+
+    // Latest image/video attachment for previews in list
+    @Query("""
+        SELECT * FROM attachments
+        WHERE entryId = :entryId
+          AND (mimeType LIKE 'image/%' OR mimeType LIKE 'video/%')
+        ORDER BY updatedAt DESC
+        LIMIT 1
+    """)
+    suspend fun getLatestPreviewForEntry(entryId: Long): Attachment?
 }

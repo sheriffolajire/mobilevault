@@ -61,6 +61,20 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.compose.runtime:runtime-saveable")
     implementation("androidx.compose.ui:ui-text")
+    // Animations (Crossfade, AnimatedVisibility, animate*AsState, etc.)
+    implementation("androidx.compose.animation:animation")
+
+    // Shimmer placeholders
+    implementation("com.google.accompanist:accompanist-placeholder-material:0.36.0")
+
+    // Inline image loading from content URIs
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    // Video frame thumbnails for previews
+    implementation("io.coil-kt:coil-video:2.6.0")
+
+    // Inline media playback
+    implementation("androidx.media3:media3-exoplayer:1.4.1")
+    implementation("androidx.media3:media3-ui:1.4.1")
 
     // Lifecycle ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")

@@ -29,6 +29,11 @@ class SettingsPrefs(context: Context) {
         get() = sp.getInt(KEY_WIPE_THRESHOLD, 10)
         set(v) { sp.edit().putInt(KEY_WIPE_THRESHOLD, v).apply() }
 
+    // New: auto-delete originals after successful import
+    var autoDeleteOnImport: Boolean
+        get() = sp.getBoolean(KEY_AUTO_DELETE_ON_IMPORT, false)
+        set(v) { sp.edit().putBoolean(KEY_AUTO_DELETE_ON_IMPORT, v).apply() }
+
     companion object {
         private const val KEY_BIOMETRICS_ENABLED = "biometrics_enabled"
         private const val KEY_IDLE_TIMEOUT_MS = "idle_timeout_ms"
@@ -36,5 +41,6 @@ class SettingsPrefs(context: Context) {
         private const val KEY_BG_GRACE_MS = "bg_grace_ms"
         private const val KEY_AUTO_WIPE = "auto_wipe"
         private const val KEY_WIPE_THRESHOLD = "wipe_threshold"
+        private const val KEY_AUTO_DELETE_ON_IMPORT = "auto_delete_on_import"
     }
 }
